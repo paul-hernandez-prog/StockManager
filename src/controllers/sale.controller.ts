@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import {
   addSale,
   listSales,
+  cancelSale,
   SaleError
 } from '../services/sale.service';
 
@@ -49,6 +50,35 @@ export async function getSales(req: Request, res: Response) {
   } catch (error) {
     res.status(500).json({
       message: 'Error al consultar las ventas'
+    });
+  }
+}
+
+export async function cancelSaleController(req: Request, res: Response) {
+  try {
+    const id = req.params.id;
+
+    if (typeof id !== 'string' || !mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        message: 'ID de venta no valido'
+      });
+    }
+
+    const sale = await cancelSale(id);
+
+    res.status(200).json({
+      message: 'Venta cancelada correctamente',
+      sale
+    });
+  } catch (error) {
+    if (error instanceof SaleError) {
+      return res.status(error.statusCode).json({
+        message: error.message
+      });
+    }
+
+    res.status(500).json({
+      message: 'Error al cancelar la venta'
     });
   }
 }

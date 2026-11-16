@@ -4,7 +4,8 @@ import {
   addProduct,
   listProducts,
   findProduct,
-  editProduct
+  editProduct,
+  listLowStockProducts
 } from '../services/product.service';
 
 function handleError(error: unknown, res: Response) {
@@ -97,6 +98,40 @@ export async function updateProduct(req: Request, res: Response) {
     }
 
     res.status(200).json(product);
+  } catch (error) {
+    handleError(error, res);
+  }
+}
+
+export async function getLowStockProducts(req: Request, res: Response) {
+  try {
+    const value = req.query.threshold;
+
+    if (value !== undefined && typeof value !== 'string') {
+      return res.status(400).json({
+        message: 'El limite de stock no es valido'
+      });
+    }
+
+    const threshold = value === undefined ? 3 : Number(value);
+
+    if (
+      (value !== undefined && value.trim() === '') ||
+      !Number.isSafeInteger(threshold) ||
+      threshold < 0
+    ) {
+      return res.status(400).json({
+        message: 'El limite debe ser un numero entero mayor o igual a 0'
+      });
+    }
+
+    const products = await listLowStockProducts(threshold);
+
+    res.status(200).json({
+      threshold,
+      count: products.length,
+      products
+    });
   } catch (error) {
     handleError(error, res);
   }

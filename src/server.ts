@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import productRoutes from './routes/product.routes';
 import saleRoutes from './routes/sale.routes';
 import reportRoutes from './routes/report.routes';
+import authRoutes from './routes/auth.routes';
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/auth', authRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({

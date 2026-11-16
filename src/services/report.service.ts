@@ -1,8 +1,12 @@
-
 import { Sale } from '../models/sale.model';
 
 export async function getProfits() {
   const result = await Sale.aggregate([
+    {
+      $match: {
+        status: { $ne: 'cancelled' }
+      }
+    },
     {
       $group: {
         _id: null,

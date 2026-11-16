@@ -1,3 +1,4 @@
+
 import mongoose from 'mongoose';
 
 const saleSchema = new mongoose.Schema({
@@ -30,6 +31,15 @@ const saleSchema = new mongoose.Schema({
   profit: {
     type: Number,
     required: true
+  },
+  status: {
+    type: String,
+    enum: ['completed', 'cancelled'],
+    default: 'completed'
+  },
+  cancelledAt: {
+    type: Date,
+    default: null
   }
 }, { timestamps: true });
 

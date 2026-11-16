@@ -19,3 +19,9 @@ export async function editProduct(id: string, data: object) {
     runValidators: true
   });
 }
+
+export async function listLowStockProducts(threshold: number) {
+  return await Product.find({
+    stock: { $lte: threshold }
+  }).sort({ stock: 1, name: 1 });
+}

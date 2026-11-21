@@ -7,6 +7,29 @@ import {
   cancelSale,
   SaleError
 } from '../services/sale.service';
+const MAX_SALE_QUANTITY = 100;
+
+function employeeSale(sale: {
+  _id: unknown;
+  product: unknown;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+  status: string;
+  cancelledAt?: Date | null;
+}) {
+  return {
+    _id: sale._id,
+    product: sale.product,
+    productName: sale.productName,
+    quantity: sale.quantity,
+    unitPrice: sale.unitPrice,
+    total: sale.total,
+    status: sale.status,
+    cancelledAt: sale.cancelledAt ?? null
+  };
+}
 
 export async function createSale(req: Request, res: Response) {
   try {
@@ -20,16 +43,24 @@ export async function createSale(req: Request, res: Response) {
         message: 'ID de producto no valido'
       });
     }
-
-    if (!Number.isInteger(quantity) || quantity <= 0) {
+    
+    if (
+      !Number.isSafeInteger(quantity) ||
+      quantity <= 0 ||
+      quantity > MAX_SALE_QUANTITY
+    ) {
       return res.status(400).json({
-        message: 'La cantidad debe ser un entero mayor a cero'
+        message: 'La cantidad debe ser un entero entre 1 y 100'
       });
     }
 
     const sale = await addSale(productId, quantity);
 
-    res.status(201).json(sale);
+    if (res.locals.authUser?.role === 'admin') {
+      return res.status(201).json(sale);
+    }
+
+    res.status(201).json(employeeSale(sale));
   } catch (error) {
     if (error instanceof SaleError) {
       return res.status(error.statusCode).json({
@@ -46,7 +77,12 @@ export async function createSale(req: Request, res: Response) {
 export async function getSales(req: Request, res: Response) {
   try {
     const sales = await listSales();
-    res.status(200).json(sales);
+
+    if (res.locals.authUser?.role === 'admin') {
+      return res.status(200).json(sales);
+    }
+
+    res.status(200).json(sales.map(employeeSale));
   } catch (error) {
     res.status(500).json({
       message: 'Error al consultar las ventas'

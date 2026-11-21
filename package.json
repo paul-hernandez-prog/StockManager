@@ -4,6 +4,7 @@
   "description": "",
   "main": "dist/server.js",
   "scripts": {
+    "bootstrap:admin": "npm run build && node dist/scripts/bootstrap-admin.js",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"

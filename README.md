@@ -99,3 +99,36 @@ Entregable 1: inventario, ventas y ganancias con MongoDB y Postman.
 Entregable 2: cancelación transaccional, alertas de inventario bajo, cuentas con JWT, roles y protección de endpoints; además se reforzó el registro de ventas con transacciones.
 
 Pendiente para las siguientes entregas: automatizar pruebas, mejorar validaciones y documentación y evaluar funciones adicionales, como reportes más completos o una interfaz sencilla.
+
+## Inicialización del primer administrador
+
+El registro público crea usuarios con el rol employee.
+Para habilitar al primer administrador se utiliza un script local.
+
+### Pasos
+
+1. Configurar MongoDB y la variable MONGO_URI.
+2. Iniciar el servidor con npm run dev.
+3. Registrar un usuario mediante POST /api/auth/register.
+4. Abrir otra terminal y ejecutar:
+
+   npm run bootstrap:admin -- correo@ejemplo.com
+
+5. Iniciar sesión con ese usuario mediante POST /api/auth/login.
+
+El script busca al empleado registrado y cambia su rol a admin.
+
+Por seguridad:
+- Solo permite conexiones a MongoDB local.
+- No permite crear otro administrador si ya existe uno.
+- No contiene contraseñas fijas.
+- La API pública no permite elegir el rol admin.
+- No debe exponerse como un endpoint público.
+
+Para probarlo sin afectar los datos principales, se puede utilizar
+una base de datos independiente, por ejemplo:
+
+mongodb://localhost:27018/stockmanager_bootstrap_test?replicaSet=rs0
+
+El procedimiento se ejecutó correctamente en una base de datos
+de prueba vacía.

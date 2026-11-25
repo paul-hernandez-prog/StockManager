@@ -1,134 +1,206 @@
-StockManager
-Sistema de inventario y ventas para pequeños negocios, especialmente vendedores de tenis, ropa y accesorios.
-Descripción
-StockManager es una API REST que permite administrar productos, registrar y cancelar ventas, controlar existencias y consultar ganancias brutas. Incluye autenticación con JWT y permisos para administradores y empleados.
+# StockManager
 
-Este proyecto se desarrolla para la materia Tecnologías de desarrollo en el servidor. La versión actual corresponde al Entregable 2 de 4, con un avance funcional intermedio. Por ahora se utiliza desde Postman; no tiene interfaz web.
-Tecnologías
+Sistema de inventario y ventas para pequeños negocios.
+
+## Descripción
+
+StockManager es una API REST para administrar productos, registrar y cancelar ventas, controlar existencias y consultar ganancias brutas.
+
+Está desarrollada con Node.js, Express, TypeScript y MongoDB. Incluye autenticación JWT y permisos para administradores y empleados.
+
+Proyecto final de la materia Tecnologías de desarrollo en el servidor. Se utiliza desde Postman y no cuenta con interfaz web.
+
+## Tecnologías
+
 - Node.js, Express y TypeScript
 - MongoDB y Mongoose
-- Docker (MongoDB local con replica set)
-- bcryptjs (hash de contraseñas)
-- jsonwebtoken (autenticación JWT)
-- Postman (pruebas manuales)
-Funcionalidades implementadas
-Inventario
+- Docker con MongoDB replica set
+- JWT y bcryptjs
+- Jest y SWC para pruebas automatizadas
+- Postman para pruebas manuales
+
+## Funcionalidades
+
+### Inventario
 - Registrar, consultar y modificar productos.
-- Guardar nombre, categoría, marca, talla, costo, precio y stock.
-- Consultar productos con existencias menores o iguales a un límite configurable.
-Ventas
-- Registrar ventas y descontar existencias de forma transaccional.
-- Comprobar que el producto exista y tenga stock suficiente.
+- Consultar productos con poco stock.
+- Validar los campos y tipos de datos recibidos.
+- Registrar ajustes manuales de stock con un motivo y auditoría en MongoDB.
+
+### Ventas
+- Registrar ventas y descontar existencias mediante transacciones.
+- Validar cantidades entre 1 y 100 unidades.
+- Rechazar ventas sin stock suficiente.
 - Consultar el historial de ventas.
-- Cancelar ventas y devolver unidades al inventario mediante una transacción.
-- Rechazar la cancelación de una venta ya cancelada.
-Ganancias
-- Consultar número de ventas válidas, unidades vendidas, ingresos, costos y ganancia bruta.
+- Cancelar ventas y devolver las unidades al inventario.
+
+### Ganancias
+- Consultar ingresos, costos y ganancias brutas.
 - Excluir las ventas canceladas de los cálculos.
-Usuarios y roles
-- Registrar cuentas con rol inicial employee.
-- Iniciar sesión con correo y contraseña y obtener un JWT de dos horas de vigencia.
-- Guardar hashes de contraseñas en MongoDB en lugar de contraseñas en texto plano.
-- Restringir endpoints según los roles admin y employee.
-Estructura principal
-src/
-├── controllers/
-├── middlewares/
-├── models/
-├── routes/
-├── services/
-└── server.ts
-Requisitos
-- Node.js y npm
-- Docker Desktop, o una instancia de MongoDB compatible con transacciones (replica set)
-- Postman u otro cliente HTTP
-Instalación
-1. Clonar el repositorio e instalar dependencias:
+
+### Usuarios
+- Registrar empleados e iniciar sesión con JWT.
+- Proteger contraseñas mediante bcrypt.
+- Restringir operaciones según el rol.
+- Ocultar costos y ganancias en las respuestas para empleados.
+- Inicializar el primer administrador con un script local.
+
+## Instalación
+
+### 1. Descargar el proyecto
+
 git clone https://github.com/paul-hernandez-prog/StockManager.git
 cd StockManager
 npm install
-2. Para reproducir el entorno MongoDB local utilizado en el Entregable 2, crear un contenedor nuevo en Docker:
+
+### 2. Preparar MongoDB
+
+Con Docker Desktop abierto, crear el contenedor:
+
 docker run -d --name stockmanager-mongo -p 127.0.0.1:27018:27018 -v stockmanager-mongo-data:/data/db mongo:7 mongod --replSet rs0 --bind_ip_all --port 27018
-3. Inicializar el replica set (solo la primera vez, cuando el contenedor ya esté listo):
+
+Inicializar el replica set:
+
 docker exec stockmanager-mongo mongosh --port 27018 --quiet --eval "rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27018'}]})"
-Comprobar el nodo primario:
+
+Comprobar que esté listo:
+
 docker exec stockmanager-mongo mongosh --port 27018 --quiet --eval "print(db.hello().isWritablePrimary)"
-El resultado esperado es true. Si el contenedor ya existe, iniciarlo con docker start stockmanager-mongo en lugar de volver a crearlo.
-4. Crear el archivo .env en la raíz del proyecto, a partir de .env.example:
+
+El resultado debe ser true.
+
+Si el contenedor ya existe, iniciarlo con:
+
+docker start stockmanager-mongo
+
+### 3. Configurar las variables de entorno
+
+Crear un archivo .env en la raíz del proyecto utilizando .env.example como referencia.
+
 PORT=3000
 MONGO_URI=mongodb://localhost:27018/stockmanager?replicaSet=rs0
-JWT_SECRET=pega_aqui_una_clave_aleatoria_segura
-Generar una clave de prueba con:
+JWT_SECRET=coloca_aqui_una_clave_segura
+
+Para generar una clave:
+
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-No subir .env a GitHub, no compartir claves ni tokens JWT. El archivo .env.example solo debe contener valores de ejemplo.
-5. Iniciar el servidor:
+
+No subir el archivo .env a GitHub.
+
+### 4. Ejecutar el proyecto
+
+Modo desarrollo:
+
 npm run dev
-API local: http://localhost:3000. Para comprobar los tipos de TypeScript, ejecutar npm run build.
-Endpoints
-Método	Endpoint	Acceso	Descripción
-GET	/api/health	Público	Comprueba el servidor
-POST	/api/auth/register	Público	Registra empleado
-POST	/api/auth/login	Público	Inicia sesión y devuelve JWT
-POST	/api/products	Admin	Registra producto
-GET	/api/products	Admin y empleado	Lista productos
-GET	/api/products/low-stock?threshold=3	Admin y empleado	Consulta existencias bajas
-GET	/api/products/:id	Admin y empleado	Consulta producto
-PUT	/api/products/:id	Admin	Modifica producto
-POST	/api/sales	Admin y empleado	Registra venta
-GET	/api/sales	Admin y empleado	Lista ventas
-PATCH	/api/sales/:id/cancel	Admin	Cancela venta y devuelve stock
-GET	/api/reports/profits	Admin	Consulta ganancias brutas
 
+Comprobar compilación:
 
-Para las rutas protegidas, enviar el encabezado Authorization: Bearer <token> obtenido al iniciar sesión. El registro público siempre crea usuarios con rol employee. Para las pruebas locales, una cuenta administradora fue asignada directamente en MongoDB; la API no permite darse permisos de administrador durante el registro.
-Reglas y errores principales
-- Una venta solo se registra si el producto existe y hay existencias suficientes.
-- Registro y cancelación usan transacciones de MongoDB para actualizar ventas e inventario de manera conjunta.
-- Una venta ya cancelada no se puede cancelar otra vez (409 Conflict).
-- Los reportes de ganancias no cuentan ventas canceladas.
-- El límite de la consulta de stock debe ser un número entero no negativo (400 Bad Request si es incorrecto).
-- Las rutas protegidas devuelven 401 Unauthorized cuando falta un token válido y 403 Forbidden cuando el usuario no tiene permiso.
-- Registrar un correo que ya existe devuelve 409 Conflict.
-Pruebas
-Las funcionalidades fueron comprobadas manualmente con Postman, incluyendo registro y cancelación de ventas, devolución de existencias, cálculo de ganancias, alertas de stock, autenticación y restricciones por rol. Las capturas se integran al PDF del Entregable 2.
+npm run build
 
-Aún no se han incorporado pruebas automatizadas.
-Estado y próximos pasos
-Entregable 1: inventario, ventas y ganancias con MongoDB y Postman.
+Ejecutar versión compilada:
 
-Entregable 2: cancelación transaccional, alertas de inventario bajo, cuentas con JWT, roles y protección de endpoints; además se reforzó el registro de ventas con transacciones.
+npm start
 
-Pendiente para las siguientes entregas: automatizar pruebas, mejorar validaciones y documentación y evaluar funciones adicionales, como reportes más completos o una interfaz sencilla.
+La API funciona en http://localhost:3000.
 
-## Inicialización del primer administrador
+## Endpoints
 
-El registro público crea usuarios con el rol employee.
-Para habilitar al primer administrador se utiliza un script local.
+| Método | Endpoint | Acceso |
+|---|---|---|
+| GET | /api/health | Público |
+| POST | /api/auth/register | Público |
+| POST | /api/auth/login | Público |
+| POST | /api/products | Admin |
+| GET | /api/products | Admin y employee |
+| GET | /api/products/low-stock?threshold=3 | Admin y employee |
+| GET | /api/products/:id | Admin y employee |
+| PUT | /api/products/:id | Admin |
+| POST | /api/sales | Admin y employee |
+| GET | /api/sales | Admin y employee |
+| PATCH | /api/sales/:id/cancel | Admin |
+| GET | /api/reports/profits | Admin |
 
-### Pasos
+Las rutas protegidas requieren el encabezado:
 
-1. Configurar MongoDB y la variable MONGO_URI.
-2. Iniciar el servidor con npm run dev.
-3. Registrar un usuario mediante POST /api/auth/register.
-4. Abrir otra terminal y ejecutar:
+Authorization: Bearer TOKEN
 
-   npm run bootstrap:admin -- correo@ejemplo.com
+El token se obtiene desde POST /api/auth/login.
 
-5. Iniciar sesión con ese usuario mediante POST /api/auth/login.
+## Reglas principales
 
-El script busca al empleado registrado y cambia su rol a admin.
+- Una venta requiere un producto existente y stock suficiente.
+- La cantidad de una venta debe ser un entero entre 1 y 100.
+- Las ventas y cancelaciones utilizan transacciones de MongoDB.
+- No se permite cancelar dos veces la misma venta.
+- Para modificar manualmente el stock se debe indicar un motivo (reason).
+- Los empleados no reciben los campos cost, unitCost ni profit.
+- El registro público siempre asigna el rol employee.
+- El servidor limita los cuerpos JSON a 10 KB.
 
-Por seguridad:
-- Solo permite conexiones a MongoDB local.
-- No permite crear otro administrador si ya existe uno.
-- No contiene contraseñas fijas.
-- La API pública no permite elegir el rol admin.
-- No debe exponerse como un endpoint público.
+Errores principales:
 
-Para probarlo sin afectar los datos principales, se puede utilizar
-una base de datos independiente, por ejemplo:
+- 400: datos o cantidades inválidas.
+- 401: autenticación faltante o inválida.
+- 403: usuario sin permisos.
+- 404: recurso no encontrado.
+- 409: conflicto, como stock insuficiente o venta ya cancelada.
+- 413: cuerpo JSON demasiado grande.
+- 500: error inesperado.
 
-mongodb://localhost:27018/stockmanager_bootstrap_test?replicaSet=rs0
+## Crear el primer administrador
 
-El procedimiento se ejecutó correctamente en una base de datos
-de prueba vacía.
+1. Iniciar MongoDB y el servidor.
+2. Registrar un empleado con POST /api/auth/register.
+3. Ejecutar en otra terminal:
+
+npm run bootstrap:admin -- correo@ejemplo.com
+
+4. Iniciar sesión con esa cuenta.
+
+El script solo permite conexiones locales y comprueba que todavía no exista un administrador. No contiene contraseñas fijas ni se expone como endpoint público.
+
+## Pruebas automatizadas
+
+Se utiliza Jest para comprobar el registro de ventas.
+
+Ejecutar:
+
+npm run build
+npm test
+
+Las pruebas requieren MongoDB local con replica set en el puerto 27018.
+
+Utilizan una base separada llamada stockmanager_e3_jest. Antes de cada caso se limpian las colecciones de productos y ventas de esa base, por lo que no debe utilizarse para guardar información importante.
+
+Casos implementados:
+
+- CP-01: registrar una venta correctamente.
+- CP-02: rechazar cantidades mayores a 100.
+- CP-03: rechazar una venta sin stock suficiente.
+- CP-04: vender la última unidad disponible.
+- CP-05: vender exactamente 100 unidades.
+
+Los cinco casos fueron ejecutados correctamente con Jest.
+
+Los escenarios están documentados en tests/casos-venta.md y tests/flujos-venta.md.
+
+## Arquitectura
+
+La API está organizada por capas:
+
+Cliente HTTP → Rutas → Controladores → Servicios → Modelos → MongoDB
+
+- routes: endpoints y permisos.
+- controllers: validación de peticiones y respuestas HTTP.
+- services: reglas de negocio y transacciones.
+- models: esquemas y operaciones de MongoDB.
+- middlewares: autenticación JWT y autorización.
+- scripts: inicialización del primer administrador.
+
+## Estado final
+
+Las funcionalidades principales del backend están implementadas y se comprobaron mediante Postman y pruebas automatizadas con Jest.
+
+El proyecto funciona en un entorno local con MongoDB y Docker. No se realizó un despliegue público.
+
+Como posibles mejoras futuras quedan una interfaz web, notificaciones automáticas, reportes más completos y pruebas adicionales de concurrencia.
